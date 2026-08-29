@@ -97,6 +97,8 @@ async function fillOrderResponse(page, order) {
         await authorize(page, config);
     }
 
+
+    //TODO V3
     await fillOrderResponse(page, config.orderResponse);
     await sleep(50000);
     await browser.close();
