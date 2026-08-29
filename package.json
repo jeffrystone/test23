@@ -1,0 +1,13 @@
+{
+  "name": "v5",
+  "version": "1.0.0",
+  "description": "Open US Open homepage with Puppeteer and take a screenshot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "private": true,
+  "dependencies": {
+    "puppeteer": "^24.17.0"
+  }
+}

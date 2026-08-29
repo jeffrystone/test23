@@ -1,0 +1,9 @@
+node_modules/
+chrome-profile/
+.simulate/
+files/
+__pycache__/
+*.pyc
+.venv/
+.env
+screenshot.png
