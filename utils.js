@@ -65,6 +65,76 @@ async function watchCookieBanner(page) {
     }
 }
 
+const EMAIL_CODE_TEXT = 'Введите код из письма для входа';
+
+function isTransientPageError(error) {
+    const message = String(error.message || error);
+    return (
+        message.includes('detached') ||
+        message.includes('destroyed') ||
+        message.includes('Target closed') ||
+        message.includes('Session closed') ||
+        message.includes('Protocol error') ||
+        message.includes('Execution context')
+    );
+}
+
+async function hasEmailCodePrompt(page) {
+    try {
+        return await page.evaluate((text) => Boolean(document.body && document.body.innerText.includes(text)), EMAIL_CODE_TEXT);
+    } catch (error) {
+        if (isTransientPageError(error)) return null;
+        throw error;
+    }
+}
+
+let emailCodeEnteredPromise = null;
+let emailWatchStopped = false;
+
+function stopEmailCodeWatch() {
+    emailWatchStopped = true;
+}
+
+async function waitForEmailCodeEntered(page) {
+    if (emailCodeEnteredPromise) return emailCodeEnteredPromise;
+    if ((await hasEmailCodePrompt(page)) !== true) return;
+    emailCodeEnteredPromise = (async () => {
+        console.log('ждем ввода кода');
+        const enterUntil = Date.now() + 300000;
+        while (!emailWatchStopped && Date.now() < enterUntil) {
+            const state = await hasEmailCodePrompt(page);
+            if (state === false) {
+                await sleep(800);
+                if ((await hasEmailCodePrompt(page)) === false) {
+                    console.log('код введен');
+                    return;
+                }
+            }
+            await sleep(500);
+        }
+        if (emailWatchStopped) return;
+        throw new Error('Код из письма не введён');
+    })();
+    return emailCodeEnteredPromise;
+}
+
+async function handleEmailCodeIfPresent(page) {
+    if ((await hasEmailCodePrompt(page)) !== true) return false;
+    await waitForEmailCodeEntered(page);
+    return true;
+}
+
+async function watchEmailCode(page) {
+    const appearUntil = Date.now() + 300000;
+    while (!emailWatchStopped && Date.now() < appearUntil) {
+        if ((await hasEmailCodePrompt(page)) === true) {
+            await waitForEmailCodeEntered(page);
+            return;
+        }
+        await sleep(500);
+    }
+}
+
 module.exports = {
     sleep,
     type,
@@ -73,5 +143,10 @@ module.exports = {
     randomDelay,
     findFrameWithSelector,
     watchCookieBanner,
+    hasEmailCodePrompt,
+    watchEmailCode,
+    handleEmailCodeIfPresent,
+    waitForEmailCodeEntered,
+    stopEmailCodeWatch,
     clean,
 };
