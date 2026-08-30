@@ -6,7 +6,7 @@ from pathlib import Path
 def generate(project):
     examples = [item["path"] for item in project.get("files", []) if item.get("path")][:3]
     return {
-        "summary": "Готов2 взять задачу. Сначала аудит источников, потом наращивание живого трафика.",
+        "summary": "Здравствуйте.",
         "days": 7,
         "estimate_cost": 15000,
         "examples": examples,

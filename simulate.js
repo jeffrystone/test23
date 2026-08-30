@@ -22,14 +22,33 @@ const workDir = path.join(__dirname, '.simulate');
 const projectJson = path.join(workDir, 'project.json');
 const orderResponse = path.join(workDir, 'order-response.json');
 const filesDir = path.join(workDir, 'files');
+const sessionPath = path.join(workDir, 'session.json');
+
+if (!fs.existsSync(sessionPath)) {
+    console.error('нет сессии, запустите node auth.js');
+    process.exit(1);
+}
 
 fs.mkdirSync(workDir, { recursive: true });
 
-run('python', ['info2.py', '--target', target, '--output', projectJson, '--output-dir', filesDir]);
-run('python', ['ai.py', '--input', projectJson, '--output', orderResponse]);
+run('python', [
+    'info2.py',
+    '--target', target,
+    '--output', projectJson,
+    '--output-dir', filesDir,
+    '--session', sessionPath,
+]);
 
-const indexArgs = ['index.js', '--target-order', target, '--order-response', orderResponse];
-if (process.argv.includes('--refresh')) {
-    indexArgs.push('--refresh');
+const project = JSON.parse(fs.readFileSync(projectJson, 'utf8'));
+if (project.type !== 'project') {
+    console.error(`Тип страницы «${project.type}», нужен project`);
+    process.exit(1);
 }
-run('node', indexArgs);
+
+run('python', ['ai.py', '--input', projectJson, '--output', orderResponse]);
+run('python', [
+    'offer.py',
+    '--target', target,
+    '--order-response', orderResponse,
+    '--session', sessionPath,
+]);
