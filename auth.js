@@ -23,9 +23,13 @@ const config = {
 };
 
 const puppeteer = require('puppeteer');
-const { sleep, type, findFrameWithSelector, watchCookieBanner, clean } = require('./utils');
+const { sleep, type, findFrameWithSelector, watchCookieBanner, hasEmailCodePrompt, watchEmailCode, handleEmailCodeIfPresent, stopEmailCodeWatch, clean } = require('./utils');
 
 async function authorize(page) {
+    if ((await hasEmailCodePrompt(page)) === true) {
+        await handleEmailCodeIfPresent(page);
+        return;
+    }
     let trigger = await page.$('#qa-sign-in-href, [data-id="qa-sign-in-href"]');
     if (!trigger) {
         trigger = await page.waitForSelector('a::-p-text(Вход)', { visible: true, timeout: 15000 });
@@ -48,6 +52,7 @@ async function authorize(page) {
         await enterButton.click();
     }
     console.log('вход: форма отправлена, заходим на сайт');
+    await handleEmailCodeIfPresent(page);
 }
 
 async function captchaChecked(page) {
@@ -98,6 +103,7 @@ async function hasLoginCookies(page) {
 }
 
 async function isLoggedInPage(page) {
+    if ((await hasEmailCodePrompt(page)) === true) return false;
     if (await hasLoginCookies(page)) return true;
     const uid = await page.$eval('meta[name="current-uid"]', (el) => (el.getAttribute('content') || '').trim()).catch(() => '0');
     if (uid && uid !== '0') return true;
@@ -108,20 +114,38 @@ async function isLoggedInPage(page) {
 async function waitForLoginCookies(page, timeout = 300000) {
     const started = Date.now();
     while (true) {
-        if (await hasLoginCookies(page)) {
+        const codePrompt = await hasEmailCodePrompt(page);
+        if (codePrompt === true) {
+            await handleEmailCodeIfPresent(page);
+            continue;
+        }
+        if (codePrompt === false && (await hasLoginCookies(page))) {
             console.log('вход: авторизованы');
             return;
         }
-        if (Date.now() - started >= timeout) break;
+        if (Date.now() - started >= timeout) {
+            if ((await hasEmailCodePrompt(page)) === true) {
+                throw new Error('Код из письма не введён');
+            }
+            throw new Error('Нет кук id/pwd, стор не записан');
+        }
         await sleep(1000);
     }
-    throw new Error('Нет кук id/pwd, стор не записан');
 }
 
 const WORK_LINK = 'a[data-id="qa-head-work"]';
 
+async function finish(browser, page) {
+    await dumpSession(page);
+    await sleep(5000);
+    stopEmailCodeWatch();
+    await browser.close();
+}
+
 async function openProjects(page) {
+    if ((await hasEmailCodePrompt(page)) === true) return;
     await page.waitForSelector(WORK_LINK, { visible: true });
+    if ((await hasEmailCodePrompt(page)) === true) return;
     await Promise.all([
         page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
         page.click(WORK_LINK),
@@ -142,9 +166,23 @@ async function openProjects(page) {
     });
     const page = await clean(browser);
     watchCookieBanner(page);
+    watchEmailCode(page);
     await page.goto('https://www.fl.ru/');
     await sleep(2000);
+
+    if (await handleEmailCodeIfPresent(page)) {
+        await waitForLoginCookies(page);
+        await finish(browser, page);
+        return;
+    }
+
     await openProjects(page);
+
+    if (await handleEmailCodeIfPresent(page)) {
+        await waitForLoginCookies(page);
+        await finish(browser, page);
+        return;
+    }
 
     if (!(await isLoggedInPage(page))) {
         await authorize(page);
@@ -152,6 +190,5 @@ async function openProjects(page) {
     } else {
         console.log('вход: авторизованы');
     }
-    await dumpSession(page);
-    await browser.close();
+    await finish(browser, page);
 })();
