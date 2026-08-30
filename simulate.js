@@ -10,6 +10,14 @@ function getArg(name) {
     return process.argv[index + 1];
 }
 
+function getOptionalArg(name) {
+    const index = process.argv.indexOf(name);
+    if (index === -1 || !process.argv[index + 1]) {
+        return null;
+    }
+    return process.argv[index + 1];
+}
+
 function run(command, args) {
     const result = spawnSync(command, args, { stdio: 'inherit', shell: true });
     if (result.status !== 0) {
@@ -18,6 +26,7 @@ function run(command, args) {
 }
 
 const target = getArg('--target');
+const mode = getOptionalArg('--mode');
 const workDir = path.join(__dirname, '.simulate');
 const projectJson = path.join(workDir, 'project.json');
 const orderResponse = path.join(workDir, 'order-response.json');
@@ -26,7 +35,12 @@ const filesDir = path.join(workDir, 'files');
 fs.mkdirSync(workDir, { recursive: true });
 
 run('python', ['info2.py', '--target', target, '--output', projectJson, '--output-dir', filesDir]);
-run('python', ['ai.py', '--input', projectJson, '--output', orderResponse]);
+
+const aiArgs = ['ai.py', '--input', projectJson, '--output', orderResponse];
+if (mode) {
+    aiArgs.push('--mode', mode);
+}
+run('python', aiArgs);
 
 const indexArgs = ['index.js', '--target-order', target, '--order-response', orderResponse];
 if (process.argv.includes('--refresh')) {
