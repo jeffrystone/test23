@@ -36,6 +36,7 @@ async function authorize(page, config) {
     const { frame, selector } = await findFrameWithSelector(page, ['#js-button']);
     await frame.waitForSelector(selector, { visible: true });
     await frame.click(selector);
+    await sleep(1500);
     await page.click('#qa-sign-in-button');
 }
 
@@ -88,6 +89,12 @@ async function fillOrderResponse(page, order) {
     await page.goto(config.targetOrder);
     await sleep(2000);
 
+    if (await page.$('[data-function="document.openChat"]')) {
+        console.log('offer: already');
+        await browser.close();
+        return;
+    }
+
     const replyButton = await page.waitForSelector('a::-p-text(Откликнуться)', { visible: true });
     await replyButton.click();
     await sleep(2000);
@@ -97,6 +104,11 @@ async function fillOrderResponse(page, order) {
         await authorize(page, config);
     }
 
+    if (await page.$('[data-function="document.openChat"]')) {
+        console.log('offer: already');
+        await browser.close();
+        return;
+    }
 
     //TODO V3
     await fillOrderResponse(page, config.orderResponse);

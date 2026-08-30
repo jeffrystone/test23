@@ -59,6 +59,7 @@ async function watchCookieBanner(page) {
         await page.waitForSelector('#cookie_accept_button', { visible: true });
         await sleep(1000);
         await page.click('#cookie_accept_button');
+        console.log('куки приняты');
     } catch {
         // баннер не появился или уже закрыт
     }
