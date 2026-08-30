@@ -66,6 +66,14 @@ def already_offered(soup):
     return soup.find(attrs={"data-function": "document.openChat"}) is not None
 
 
+def uid_from_html(html):
+    soup = BeautifulSoup(html, "html.parser")
+    meta = soup.find("meta", {"name": "current-uid"})
+    if meta and meta.get("content") is not None:
+        return meta.get("content").strip()
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", required=True)
@@ -93,10 +101,8 @@ def main():
     hash_value = field_value(soup, "hash")
     token = token_key(soup)
     if not hash_value or not token:
-        raise RuntimeError(
-            "На странице нет hash/u_token_key — сессия или форма отклика недоступны. "
-            f"{html_snippet(page.text)}"
-        )
+        print("offer: no_balance")
+        sys.exit(2)
     cost_type = field_value(soup, "cost_type") or "2"
 
     check_headers = {
@@ -164,14 +170,21 @@ def main():
         data=form,
         allow_redirects=False,
     )
-    if submit.status_code not in (301, 302, 303):
-        raise RuntimeError(
-            f"Отклик не принят: HTTP {submit.status_code} {html_snippet(submit.text)}"
-        )
-
-    print(f"status: {submit.status_code}")
-    print(f"location: {submit.headers.get('Location', '')}")
-    print("offer: ok")
+    if submit.status_code in (301, 302, 303):
+        print(f"status: {submit.status_code}")
+        print(f"location: {submit.headers.get('Location', '')}")
+        print("offer: ok")
+        return
+    if submit.status_code in (401, 403, 419):
+        raise RuntimeError("сессия мертвая, запустите node auth.js")
+    if submit.status_code == 200:
+        uid = uid_from_html(submit.text)
+        if uid and uid != "0":
+            print("offer: no_balance")
+            sys.exit(2)
+    raise RuntimeError(
+        f"Отклик не принят: HTTP {submit.status_code} {html_snippet(submit.text)}"
+    )
 
 
 if __name__ == "__main__":

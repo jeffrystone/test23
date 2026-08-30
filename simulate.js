@@ -1,6 +1,7 @@
 const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { tgNotify } = require('./integration');
 
 function getArg(name) {
     const index = process.argv.indexOf(name);
@@ -12,6 +13,23 @@ function getArg(name) {
 
 function run(command, args) {
     const result = spawnSync(command, args, { stdio: 'inherit', shell: true });
+    if (result.status !== 0) {
+        process.exit(result.status ?? 1);
+    }
+}
+
+function runOffer(args) {
+    const result = spawnSync('python', args, { encoding: 'utf8', shell: true });
+    if (result.stdout) process.stdout.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
+    const output = `${result.stdout || ''}\n${result.stderr || ''}`;
+    if (output.includes('offer: ok')) {
+        tgNotify('offer_ok', true);
+    } else if (output.includes('offer: no_balance')) {
+        tgNotify('offer_no_balance', false);
+    } else if (output.includes('offer: already')) {
+        tgNotify('offer_already', false);
+    }
     if (result.status !== 0) {
         process.exit(result.status ?? 1);
     }
@@ -46,9 +64,10 @@ if (project.type !== 'project') {
 }
 
 run('python', ['ai.py', '--input', projectJson, '--output', orderResponse]);
-run('python', [
+runOffer([
     'offer.py',
     '--target', target,
     '--order-response', orderResponse,
     '--session', sessionPath,
 ]);
+
