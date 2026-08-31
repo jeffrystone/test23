@@ -12,14 +12,21 @@ from .parser import fl_board_parser, fl_next_page_exist, fl_paginated_url
 
 logger = logging.getLogger(__name__)
 
+FL_COOKIES_DIR = "./staticfiles/fl"
+FL_COOKIES_URL = "https://www.fl.ru/user/modals/my/"
+
+
+def get_fl_cookies() -> dict:
+    return load_cookies(FL_COOKIES_URL, consts.HEADERS, FL_COOKIES_DIR)
+
 
 def parse_fl_board() -> Generator:
 
-    base_url = "https://fl.ru"
-    cookies_url = "https://www.fl.ru/user/modals/my/"
+    base_url = "https://www.fl.ru"
+    cookies_url = FL_COOKIES_URL
 
     headers = consts.HEADERS
-    cookies = load_cookies(cookies_url, headers, "./staticfiles/fl")
+    cookies = get_fl_cookies()
     if not {"XSRF-TOKEN", "PHPSESSID"}.issubset(cookies.keys()):
         logger.critical(
             "Cookies do not contain authorization data. Current cookies %s", cookies

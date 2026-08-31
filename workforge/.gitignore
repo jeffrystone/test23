@@ -61,6 +61,7 @@ __pycache__/
 
 # Runtime local data (sessions, DB, logs)
 staticfiles/fl/
+staticfiles/fl/attachments/
 staticfiles/app.db
 staticfiles/*.db
 staticfiles/logs/

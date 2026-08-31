@@ -11,6 +11,7 @@ from src.common.db.engine import get_conn as __get_conn
 from src.common.utils import get_keywords
 from src.common.services.filter_service import FilterService
 from src.common.keyword_counter import MarkersCounter
+from src.fl.order_page_service import OrderPageService
 
 logger = logging.getLogger(__name__)
 envs = Envs()
@@ -57,3 +58,7 @@ def get_conn():
 
 def get_repo():
     return SqlLiteDbOrderRepo(get_conn())
+
+
+def get_order_page_service() -> OrderPageService:
+    return OrderPageService(envs.ORDER_ATTACHMENTS_DIR)

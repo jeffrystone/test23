@@ -1,4 +1,4 @@
-import httpx
+from src.common.fl_http import fl_get
 
 
 def lazy_paginated_scrapping(
@@ -12,7 +12,7 @@ def lazy_paginated_scrapping(
 ):
 
     url = pagination_builder(base_url, current_page)
-    response = httpx.get(url, headers=headers, cookies=cookies, follow_redirects=True)
+    response = fl_get(url, headers=headers, cookies=cookies)
     html = response.text
 
     yield parser_func(html)

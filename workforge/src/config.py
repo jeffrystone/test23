@@ -37,4 +37,5 @@ class Envs(BaseSettings):
     ENABLE_FINAL_LLM: bool = False
     FINAL_LLM_MAX_ORDERS: int = 1
     FINAL_LLM_MAX_TOKENS: int = 512
+    ORDER_ATTACHMENTS_DIR: Path = BASE_DIR.parent / "staticfiles" / "fl" / "attachments"
 

@@ -5,8 +5,9 @@ from src.common import dto, llm, telegram_senders
 from src.common import dto_msg_converters as converters
 from src.schemas import ClassifiedOrder, ClassifiedOrderBatch
 
-from src.container import async_openai_client, envs, prompts, get_repo
-from src.fl.main import parse_fl_board
+from src.container import async_openai_client, envs, prompts, get_repo, get_order_page_service
+from src.fl.main import parse_fl_board, get_fl_cookies
+from src.common import consts
 from src.common.repos import AbstractOrderRepo
 from src.common.dto import OrderFilterResult, RunStats
 from src.common.services.collect_stat_service import CollectStatService
@@ -147,6 +148,24 @@ def _apply_llm_filtering(
 
     return orders_after_llm_filtering, llm_rejected_ids, skipped
 
+def _enrich_orders_for_final_llm(
+    orders_for_sending: list[OrderFilterResult],
+) -> None:
+    if not envs.ENABLE_FINAL_LLM or not orders_for_sending:
+        return
+
+    service = get_order_page_service()
+    cookies = get_fl_cookies()
+    candidates = orders_for_sending[: envs.FINAL_LLM_MAX_ORDERS]
+    enriched_orders = service.enrich_orders(
+        [item.order for item in candidates],
+        cookies=cookies,
+        headers=consts.HEADERS,
+        max_count=envs.FINAL_LLM_MAX_ORDERS,
+    )
+    for item, enriched in zip(candidates, enriched_orders):
+        item.order = enriched
+
 def send_to_telegram_async(msgs: list[str]):
     return asyncio.run(telegram_senders.asend_messages(
         envs.TELEGRAM_BOT_TOKEN,
@@ -237,6 +256,8 @@ def _process_fl(stat_service: CollectStatService) -> None:
     stat_service.add_skipped(skipped_after_filtering, by_llm=True)
 
     orders_for_sending = send_without_filtering + orders_after_llm_filtering
+
+    _enrich_orders_for_final_llm(orders_for_sending)
 
     successfully_sent_ids = send_orders_to_telegram(orders_for_sending)
     stat_service.add_count_send(successfully_sent_ids)
