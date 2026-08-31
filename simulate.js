@@ -19,6 +19,10 @@ function getOptionalArg(name) {
   return process.argv[index + 1];
 }
 
+function hasFlag(name) {
+  return process.argv.includes(name);
+}
+
 function run(command, args) {
   const result = spawnSync(command, args, { stdio: "inherit", shell: true });
   if (result.status !== 0) {
@@ -30,6 +34,7 @@ function runOffer(args) {
   const result = spawnSync("python", args, { encoding: "utf8", shell: true });
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.stderr) process.stderr.write(result.stderr);
+
   const output = `${result.stdout || ""}\n${result.stderr || ""}`;
   if (output.includes("offer: ok")) {
     tgNotify("offer_ok", true);
@@ -38,13 +43,27 @@ function runOffer(args) {
   } else if (output.includes("offer: already")) {
     tgNotify("offer_already", false);
   }
+
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
 }
 
+function loadEnv() {
+  const envPath = path.join(__dirname, ".env");
+  if (!fs.existsSync(envPath)) return;
+  try {
+    process.loadEnvFile(envPath);
+  } catch {
+    // Node < 20.12 — переменные задаются снаружи
+  }
+}
+
+loadEnv();
+
 const target = getArg("--target");
 const mode = getOptionalArg("--mode");
+const skipAi = hasFlag("--skip-ai");
 const workDir = path.join(__dirname, ".simulate");
 const projectJson = path.join(workDir, "project.json");
 const orderResponse = path.join(workDir, "order-response.json");
@@ -71,18 +90,27 @@ run("python", [
 ]);
 
 const project = JSON.parse(fs.readFileSync(projectJson, "utf8"));
-if (project.type !== "project") {
-  console.error(`Тип страницы «${project.type}», нужен project`);
+if (project.type !== "project" && project.type !== "vacancy") {
+  console.error(`Неизвестный тип страницы «${project.type}»`);
   process.exit(1);
 }
 
-const aiArgs = ["ai.py", "--input", projectJson, "--output", orderResponse];
-if (mode) {
-  aiArgs.push("--mode", mode);
-}
-run("python", aiArgs);
+console.log(`type: ${project.type}`);
 
-runOffer([
+if (skipAi) {
+  if (!fs.existsSync(orderResponse)) {
+    console.error(`--skip-ai: нужен файл ${orderResponse}`);
+    process.exit(1);
+  }
+} else {
+  const aiArgs = ["ai.py", "--input", projectJson, "--output", orderResponse];
+  if (mode) {
+    aiArgs.push("--mode", mode);
+  }
+  run("python", aiArgs);
+}
+
+const offerArgs = [
   "offer.py",
   "--target",
   target,
@@ -90,4 +118,13 @@ runOffer([
   orderResponse,
   "--session",
   sessionPath,
-]);
+  "--type",
+  project.type,
+];
+
+const resumePath = process.env.FL_RESUME_PATH;
+if (project.type === "vacancy" && resumePath) {
+  offerArgs.push("--resume-path", resumePath);
+}
+
+runOffer(offerArgs);
