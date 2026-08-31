@@ -1,0 +1,4 @@
+{
+    "main": "./prompts/main.txt",
+    "response": "./prompts/response_prompt.txt"
+}

@@ -9,3 +9,11 @@ __pycache__/
 .env
 screenshot.png
 docs/
+
+# workforge subfolder (local runtime)
+workforge/venv/
+workforge/src/.env
+workforge/staticfiles/fl/
+workforge/staticfiles/*.db
+workforge/staticfiles/logs/
+workforge/**/__pycache__/
