@@ -18,6 +18,8 @@ expected_message = """Платформа: FL.ru
 
 """
 
+final_llm_not_done = "⚪ Финальная LLM - Не делалась"
+
 
 
 
@@ -86,4 +88,4 @@ def test_convert_filtered_to_telegram_msg(expected_postfix, llm_classification, 
         data=[fo],
         skipped_msg=False
     )
-    assert result_messages[0] == expected_message + expected_postfix
+    assert result_messages[0] == expected_message + expected_postfix + "\n" + final_llm_not_done

@@ -4,7 +4,7 @@
 
 **Суть:** после keyword-фильтра и (опционально) первой LLM, при `ENABLE_FINAL_LLM=1` сервис переходит на страницу заказа, забирает полное описание, определяет тип `project` / `vacancy`, скачивает вложения и пишет результат в `Order.meta` перед отправкой в Telegram.
 
-**Статус:** enrichment реализован и проверен. Задача 2 (`evaluate_order` / final LLM) **ещё не подключена**.
+**Статус:** enrichment реализован и проверен. Финальная LLM — [задача 2](task-02-final-llm-filtering.md).
 
 **Коммит:** `773cce5b29ed3a4bb23a31292dd035aa1f1fde4e` — `Add FL.ru order page scraping with attachments download` (ветка `workforge`, 2026-09-01). Краткий hash: `773cce5`.
 
@@ -170,12 +170,12 @@ GET https://www.fl.ru/projects/<id>/... "HTTP/1.1 200 OK"
 
 ## Ограничения / не в scope
 
-- **Задача 2:** `evaluate_order` / final LLM не вызывается — в Telegram уходят «сырые» кандидаты.
+- **Задача 2:** реализована — см. [task-02-final-llm-filtering.md](task-02-final-llm-filtering.md).
 - **Пагинация:** `page-2`, `page-3` → 404; ~30 заказов за прогон.
-- **`SEND_SKIPPED_ORDERS=1`:** много пропущенных заказов в Telegram — ожидаемо до задачи 2.
+- **`SEND_SKIPPED_ORDERS=1`:** много пропущенных keyword-заказов в Telegram.
 
 ---
 
 ## Следующий шаг
 
-Задача 2: подключить `evaluate_order` из `final_response/` в `use_cases.py` после enrichment.
+Задача 3: сборка финального текста отклика (greeting + LLM + signature).

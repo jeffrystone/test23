@@ -29,6 +29,26 @@ def _format_llm_meta(data: dict | None, filter_with_llm: bool = True) -> str:
     return template.format(icon=icon, resolution=resolution, description=description)
 
 
+def _format_final_response_meta(data: dict | None) -> str:
+    if not data:
+        return "⚪ Финальная LLM - Не делалась"
+
+    if data.get("should_respond"):
+        lines = [
+            "✅ Финальная LLM - Одобрить",
+            f"   Черновик: {data.get('response_text') or '—'}",
+            f"   Срок: {data.get('execution_days')} дн.",
+            f"   Цена: {data.get('price')} ₽",
+        ]
+        return "\n".join(lines)
+
+    reason = data.get("reject_reason") or "без причины"
+    return f"❌ Финальная LLM - Отказать ({reason})"
+
+
+ENRICHMENT_META_KEYS = ("order_page_scraped", "page_type", "files")
+
+
 
 def _build_order_message(
     platform: str,
@@ -45,6 +65,8 @@ def _build_order_message(
     order.meta.pop("qa_project_name", None)
     order.meta.pop("data_id", None)
     order.meta.pop("image_urls", None)
+    for key in ENRICHMENT_META_KEYS:
+        order.meta.pop(key, None)
 
     lines = [
         f"Платформа: {platform}",
@@ -105,6 +127,7 @@ def convert_filtered_to_telegram_msg(
     messages = []
     for item in filtered_orders:
         llm_meta = item.order.meta.pop("llm_classification", None)
+        final_response_meta = item.order.meta.pop("final_response", None)
 
         symbol = color_to_symbol(item.telegram_message_color)
         extra_lines = [
@@ -112,6 +135,7 @@ def convert_filtered_to_telegram_msg(
             f"{symbol} Позитивные/Негативные/Стоп: {item.count_positive_keywords}/{item.count_negative_keywords}/{item.count_stop_keywords}",
             "",
             _format_llm_meta(llm_meta, item.filter_with_llm),
+            _format_final_response_meta(final_response_meta),
         ]
 
         if skipped_msg:

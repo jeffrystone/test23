@@ -11,10 +11,24 @@ from src.common import consts
 from src.common.repos import AbstractOrderRepo
 from src.common.dto import OrderFilterResult, RunStats
 from src.common.services.collect_stat_service import CollectStatService
+from src.final_response.config import FinalResponseEnvs
+from src.final_response.schemas import OrderInput
+from src.final_response.service import evaluate_order
 from src.container import get_filter_service, get_stat_service
 
 logger = logging.getLogger("app")
 LLM_CLASSIFICATION_META_KEY = "llm_classification"
+FINAL_RESPONSE_META_KEY = "final_response"
+
+
+def order_to_final_response_input(order: dto.Order) -> OrderInput:
+    return OrderInput(
+        id=order.id,
+        name=order.name,
+        description=order.description,
+        url=order.url,
+        meta=order.meta,
+    )
 
 
 def classify(
@@ -166,6 +180,64 @@ def _enrich_orders_for_final_llm(
     for item, enriched in zip(candidates, enriched_orders):
         item.order = enriched
 
+
+def _apply_final_llm_filtering(
+    orders_for_sending: list[OrderFilterResult],
+    stat_service: CollectStatService,
+) -> tuple[list[OrderFilterResult], set[str], list[OrderFilterResult]]:
+    if not envs.ENABLE_FINAL_LLM or not orders_for_sending:
+        return orders_for_sending, set(), []
+
+    candidates = orders_for_sending[: envs.FINAL_LLM_MAX_ORDERS]
+    rest = orders_for_sending[len(candidates) :]
+    if not candidates:
+        return orders_for_sending, set(), []
+
+    final_envs = FinalResponseEnvs()
+    stat_service.add_llm_requests_count(len(candidates))
+
+    async def run_async():
+        return await asyncio.gather(
+            *[
+                evaluate_order(
+                    order_to_final_response_input(item.order),
+                    envs=final_envs,
+                )
+                for item in candidates
+            ],
+            return_exceptions=True,
+        )
+
+    results = asyncio.run(run_async())
+
+    approved: list[OrderFilterResult] = []
+    final_llm_rejected_ids: set[str] = set()
+    skipped: list[OrderFilterResult] = []
+
+    for item, result in zip(candidates, results):
+        if isinstance(result, BaseException):
+            logger.warning(
+                "Final LLM failed for order %s: %s",
+                item.order.id,
+                result,
+                exc_info=result,
+            )
+            approved.append(item)
+            continue
+
+        if item.order.meta is None:
+            item.order.meta = {}
+        item.order.meta[FINAL_RESPONSE_META_KEY] = result.model_dump(exclude_none=True)
+
+        if result.should_respond:
+            approved.append(item)
+        else:
+            final_llm_rejected_ids.add(item.order.id)
+            skipped.append(item)
+
+    return approved + rest, final_llm_rejected_ids, skipped
+
+
 def send_to_telegram_async(msgs: list[str]):
     return asyncio.run(telegram_senders.asend_messages(
         envs.TELEGRAM_BOT_TOKEN,
@@ -259,6 +331,11 @@ def _process_fl(stat_service: CollectStatService) -> None:
 
     _enrich_orders_for_final_llm(orders_for_sending)
 
+    orders_for_sending, final_llm_rejected_ids, skipped_final = (
+        _apply_final_llm_filtering(orders_for_sending, stat_service)
+    )
+    stat_service.add_skipped(skipped_final, by_llm=True)
+
     successfully_sent_ids = send_orders_to_telegram(orders_for_sending)
     stat_service.add_count_send(successfully_sent_ids)
 
@@ -269,5 +346,5 @@ def _process_fl(stat_service: CollectStatService) -> None:
         all_orders=data.orders,
         successfully_sent_ids=successfully_sent_ids,
         skipped_ids=skipped_ids,
-        llm_rejected_ids=llm_rejected_ids,
+        llm_rejected_ids=llm_rejected_ids | final_llm_rejected_ids,
     )
