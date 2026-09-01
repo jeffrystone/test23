@@ -8,7 +8,7 @@ __pycache__/
 .venv/
 .env
 screenshot.png
-docs/
+/docs/
 
 # workforge subfolder (local runtime)
 workforge/venv/
