@@ -4,7 +4,7 @@
 
 **Суть:** после enrichment вызывается `evaluate_order` из `final_response/` — решение `should_respond`, черновик отклика, срок, цена, причина отказа. Отказы обрабатываются как у первой LLM.
 
-**Статус:** подключено к `process_fl`. Задачи 3–4 (сборка текста, auto-offer) **ещё не реализованы**.
+**Статус:** подключено к `process_fl`. Сборка отклика — [задача 3](task-03-final-response-assembly.md). Задача 4 (auto-offer) **ещё не реализована**.
 
 ---
 
@@ -15,7 +15,7 @@ flowchart LR
   keyword[keyword + 1st LLM] --> enrich[enrichment Task1]
   enrich --> finalLlm[evaluate_order Task2]
   finalLlm --> decision{should_respond?}
-  decision -->|yes| telegram[Telegram + draft]
+  decision -->|yes| telegram[Telegram + draft or full_text]
   decision -->|no| skipped[skipped_by_llm]
 ```
 
@@ -43,7 +43,7 @@ flowchart LR
 - **Scope:** первые `FINAL_LLM_MAX_ORDERS` из `orders_for_sending`.
 - **Провайдер:** `FINAL_RESPONSE_PROVIDER` (`mock` / `yandex`) из `FinalResponseEnvs`.
 - **Meta:** `order.meta.final_response` — dump `FinalResponseResult`.
-- **Approve:** заказ остаётся в отправке, в Telegram — черновик, срок, цена.
+- **Approve:** заказ остаётся в отправке; в Telegram — черновик или полный отклик (см. [задача 3](task-03-final-response-assembly.md)), срок, цена.
 - **Reject:** убирается из основной отправки → `skipped_by_llm`; при `SEND_LLM_SKIPPED_ORDERS=1` — отдельное сообщение с причиной.
 - **Ошибка API:** fail-open — заказ отправляется без `final_response` meta.
 - **За пределами cap:** без финальной LLM (как раньше).
@@ -102,11 +102,10 @@ PYTHONPATH=. venv/Scripts/python.exe scripts/smoke_final_response.py
 ## Ограничения / не в scope
 
 - Claude-провайдер
-- Задача 3: greeting + signature
 - Задача 4: отправка отклика на FL.ru
 
 ---
 
 ## Следующий шаг
 
-Задача 3: сборка финального текста отклика (greeting + LLM + signature).
+[Задача 3](task-03-final-response-assembly.md) — сборка финального текста (реализована). Далее — задача 4 (auto-offer).

@@ -26,6 +26,7 @@ class FinalResponseResult(BaseModel):
     execution_days: int | None = None
     price: int | None = None
     reject_reason: str | None = None
+    full_text: str | None = None
 
     @classmethod
     def from_llm_payload(cls, order_id: str, payload: LLMResponsePayload) -> "FinalResponseResult":

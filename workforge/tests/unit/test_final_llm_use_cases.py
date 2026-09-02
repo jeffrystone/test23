@@ -62,6 +62,8 @@ def test_apply_final_llm_approve():
     meta = approved[0].order.meta[FINAL_RESPONSE_META_KEY]
     assert meta["should_respond"] is True
     assert meta["response_text"] == "Черновик"
+    assert "full_text" in meta
+    assert "Черновик" in meta["full_text"]
     assert stat.stats.llm_requests == 1
 
 

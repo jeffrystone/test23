@@ -22,10 +22,37 @@ def test_convert_filtered_shows_final_response_approve():
     fo = OrderFilterResult(order=o, telegram_message_color=ColorsEnum.green)
     msg = convert_filtered_to_telegram_msg("FL.ru", [fo])[0]
     assert "✅ Финальная LLM - Одобрить" in msg
+    assert "Черновик:" in msg
     assert "Готов выполнить" in msg
     assert "14 дн." in msg
     assert "120000 ₽" in msg
     assert "order_page_scraped" not in msg
+
+
+def test_convert_filtered_shows_final_response_approve_with_full_text():
+    o = Order(
+        id="4",
+        name="API",
+        description="REST API",
+        url="https://fl.ru/projects/4/",
+        meta={
+            "final_response": {
+                "should_respond": True,
+                "response_text": "Готов выполнить",
+                "full_text": "Добрый день!\n\nГотов выполнить\n\nПодпись",
+                "execution_days": 14,
+                "price": 120000,
+            },
+        },
+    )
+    fo = OrderFilterResult(order=o, telegram_message_color=ColorsEnum.green)
+    msg = convert_filtered_to_telegram_msg("FL.ru", [fo])[0]
+    assert "✅ Финальная LLM - Одобрить" in msg
+    assert "Отклик:" in msg
+    assert "Добрый день!" in msg
+    assert "Подпись" in msg
+    assert "Черновик:" not in msg
+    assert "14 дн." in msg
 
 
 def test_convert_filtered_shows_final_response_reject_skipped():

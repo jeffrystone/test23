@@ -17,3 +17,6 @@ class FinalResponseEnvs(BaseSettings):
     YANDEX_FOLDER_ID: str = ""
     YANDEX_MODEL: str = "yandexgpt-lite/latest"
     FINAL_RESPONSE_MAX_TOKENS: int = 512
+    RESPONSE_SIGNATURE_FILE: Path = (
+        Path(__file__).resolve().parents[2] / "prompts" / "response_signature.txt"
+    )

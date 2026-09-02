@@ -34,9 +34,15 @@ def _format_final_response_meta(data: dict | None) -> str:
         return "⚪ Финальная LLM - Не делалась"
 
     if data.get("should_respond"):
+        full_text = data.get("full_text")
+        if full_text:
+            indented = "\n".join(f"   {line}" for line in full_text.splitlines())
+            body_line = f"   Отклик:\n{indented}"
+        else:
+            body_line = f"   Черновик: {data.get('response_text') or '—'}"
         lines = [
             "✅ Финальная LLM - Одобрить",
-            f"   Черновик: {data.get('response_text') or '—'}",
+            body_line,
             f"   Срок: {data.get('execution_days')} дн.",
             f"   Цена: {data.get('price')} ₽",
         ]

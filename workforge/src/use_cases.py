@@ -12,6 +12,7 @@ from src.common.repos import AbstractOrderRepo
 from src.common.dto import OrderFilterResult, RunStats
 from src.common.services.collect_stat_service import CollectStatService
 from src.final_response.config import FinalResponseEnvs
+from src.final_response.assemble import assemble_response
 from src.final_response.schemas import OrderInput
 from src.final_response.service import evaluate_order
 from src.container import get_filter_service, get_stat_service
@@ -227,7 +228,20 @@ def _apply_final_llm_filtering(
 
         if item.order.meta is None:
             item.order.meta = {}
-        item.order.meta[FINAL_RESPONSE_META_KEY] = result.model_dump(exclude_none=True)
+        meta = result.model_dump(exclude_none=True)
+        if result.should_respond:
+            try:
+                meta["full_text"] = assemble_response(
+                    result.response_text or "",
+                    signature_path=final_envs.RESPONSE_SIGNATURE_FILE,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Response assembly failed for order %s: %s",
+                    item.order.id,
+                    exc,
+                )
+        item.order.meta[FINAL_RESPONSE_META_KEY] = meta
 
         if result.should_respond:
             approved.append(item)
