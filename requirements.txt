@@ -5,3 +5,4 @@ openai==2.5.0
 pydantic==2.12.3
 pydantic-settings==2.11.0
 anthropic
+tzdata

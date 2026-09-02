@@ -4,6 +4,7 @@ import logging
 import sys
 from pathlib import Path
 
+from final_response.assemble import assemble_response
 from final_response.config import FinalResponseEnvs
 from final_response.logging_config import LOG_FILE, setup_logging
 from final_response.schemas import OrderInput
@@ -29,7 +30,7 @@ def project_to_order_input(project: dict) -> OrderInput:
 def result_to_order_response(project: dict, result) -> dict:
     examples = [item["path"] for item in project.get("files", []) if item.get("path")][:3]
     return {
-        "summary": result.response_text or "",
+        "summary": assemble_response(result.response_text or ""),
         "days": result.execution_days or 0,
         "estimate_cost": result.price or 0,
         "examples": examples,

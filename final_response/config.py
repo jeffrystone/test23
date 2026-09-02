@@ -19,3 +19,4 @@ class FinalResponseEnvs(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
     AI_MAX_TOKENS: int = 512
+    RESPONSE_SIGNATURE_FILE: Path = BASE_DIR / "prompts" / "response_signature.txt"
