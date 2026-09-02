@@ -39,3 +39,6 @@ class Envs(BaseSettings):
     FINAL_LLM_MAX_TOKENS: int = 512  # unused; see FINAL_RESPONSE_MAX_TOKENS in final_response config
     ORDER_ATTACHMENTS_DIR: Path = BASE_DIR.parent / "staticfiles" / "fl" / "attachments"
 
+    OFFER_MODE: str = "manual"
+    FL_RESUME_PATH: str = ""
+

@@ -7,6 +7,8 @@ from src.schemas import ClassifiedOrder, ClassifiedOrderBatch
 
 from src.container import async_openai_client, envs, prompts, get_repo, get_order_page_service
 from src.fl.main import parse_fl_board, get_fl_cookies
+from src.fl.offer_mode import is_auto_offer
+from src.fl.offer_submitter import OfferSubmitter
 from src.common import consts
 from src.common.repos import AbstractOrderRepo
 from src.common.dto import OrderFilterResult, RunStats
@@ -20,6 +22,7 @@ from src.container import get_filter_service, get_stat_service
 logger = logging.getLogger("app")
 LLM_CLASSIFICATION_META_KEY = "llm_classification"
 FINAL_RESPONSE_META_KEY = "final_response"
+OFFER_RESULT_META_KEY = "offer_result"
 
 
 def order_to_final_response_input(order: dto.Order) -> OrderInput:
@@ -252,6 +255,54 @@ def _apply_final_llm_filtering(
     return approved + rest, final_llm_rejected_ids, skipped
 
 
+def _apply_auto_offers(orders_for_sending: list[OrderFilterResult]) -> None:
+    if not is_auto_offer(envs.OFFER_MODE):
+        return
+
+    submitter = OfferSubmitter()
+    cookies = get_fl_cookies()
+    resume_path = envs.FL_RESUME_PATH.strip() or None
+
+    for item in orders_for_sending:
+        meta = (item.order.meta or {}).get(FINAL_RESPONSE_META_KEY)
+        if not meta or not meta.get("should_respond") or not meta.get("full_text"):
+            continue
+
+        page_type = (item.order.meta or {}).get("page_type", "project")
+        try:
+            result = submitter.submit(
+                url=item.order.url,
+                summary=meta["full_text"],
+                days=int(meta.get("execution_days") or 0),
+                cost=int(meta.get("price") or 0),
+                page_type=page_type,
+                cookies=cookies,
+                headers=consts.HEADERS,
+                resume_path=resume_path,
+            )
+            if item.order.meta is None:
+                item.order.meta = {}
+            item.order.meta[OFFER_RESULT_META_KEY] = result.model_dump(exclude_none=True)
+            logger.info(
+                "Auto offer for order %s: status=%s",
+                item.order.id,
+                result.status,
+            )
+        except Exception as exc:
+            logger.warning(
+                "Auto offer failed for order %s: %s",
+                item.order.id,
+                exc,
+                exc_info=True,
+            )
+            if item.order.meta is None:
+                item.order.meta = {}
+            item.order.meta[OFFER_RESULT_META_KEY] = {
+                "status": "error",
+                "message": str(exc),
+            }
+
+
 def send_to_telegram_async(msgs: list[str]):
     return asyncio.run(telegram_senders.asend_messages(
         envs.TELEGRAM_BOT_TOKEN,
@@ -349,6 +400,8 @@ def _process_fl(stat_service: CollectStatService) -> None:
         _apply_final_llm_filtering(orders_for_sending, stat_service)
     )
     stat_service.add_skipped(skipped_final, by_llm=True)
+
+    _apply_auto_offers(orders_for_sending)
 
     successfully_sent_ids = send_orders_to_telegram(orders_for_sending)
     stat_service.add_count_send(successfully_sent_ids)

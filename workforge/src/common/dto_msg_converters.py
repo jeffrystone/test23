@@ -52,6 +52,21 @@ def _format_final_response_meta(data: dict | None) -> str:
     return f"❌ Финальная LLM - Отказать ({reason})"
 
 
+def _format_offer_result_meta(data: dict | None) -> str:
+    if not data:
+        return ""
+
+    status = data.get("status")
+    if status == "ok":
+        return "✅ Auto-offer: отклик отправлен на FL.ru"
+    if status == "already":
+        return "⚪ Auto-offer: уже откликались"
+    if status == "no_balance":
+        return "❌ Auto-offer: нет откликов на балансе"
+    message = data.get("message") or status or "ошибка"
+    return f"❌ Auto-offer: {message}"
+
+
 ENRICHMENT_META_KEYS = ("order_page_scraped", "page_type", "files")
 
 
@@ -134,6 +149,7 @@ def convert_filtered_to_telegram_msg(
     for item in filtered_orders:
         llm_meta = item.order.meta.pop("llm_classification", None)
         final_response_meta = item.order.meta.pop("final_response", None)
+        offer_result_meta = item.order.meta.pop("offer_result", None)
 
         symbol = color_to_symbol(item.telegram_message_color)
         extra_lines = [
@@ -143,6 +159,9 @@ def convert_filtered_to_telegram_msg(
             _format_llm_meta(llm_meta, item.filter_with_llm),
             _format_final_response_meta(final_response_meta),
         ]
+        offer_line = _format_offer_result_meta(offer_result_meta)
+        if offer_line:
+            extra_lines.extend(["", offer_line])
 
         if skipped_msg:
             env_name = "SEND_LLM_SKIPPED_ORDERS" if skipped_by_llm else "SEND_SKIPPED_ORDERS"

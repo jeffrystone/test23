@@ -4,7 +4,7 @@
 
 **Суть:** при `should_respond=True` собирается `full_text` = приветствие (MSK) + черновик LLM + подпись из файла. Текст сохраняется в `meta.final_response.full_text` и показывается в Telegram.
 
-**Статус:** подключено к `_apply_final_llm_filtering`. Задача 4 (auto-offer на FL.ru) **ещё не реализована**.
+**Статус:** подключено к `_apply_final_llm_filtering`. Режимы Manual/Auto — [задача 4](task-04-work-modes.md).
 
 ---
 
@@ -138,4 +138,4 @@ run.bat   # или ./run.sh
 
 ## Следующий шаг
 
-Задача 4: auto-offer — отправка assembled `full_text` на FL.ru через `offer.py` / аналог в workforge.
+[Задача 4](task-04-work-modes.md) — режимы Manual/Auto (реализована). Далее — §5 ошибки auto-send или §6 CRM.

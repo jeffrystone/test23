@@ -55,6 +55,28 @@ def test_convert_filtered_shows_final_response_approve_with_full_text():
     assert "14 дн." in msg
 
 
+def test_convert_filtered_shows_offer_result_auto_ok():
+    o = Order(
+        id="5",
+        name="API",
+        description="REST API",
+        url="https://fl.ru/projects/5/",
+        meta={
+            "final_response": {
+                "should_respond": True,
+                "full_text": "Добрый день!\n\nТекст",
+                "execution_days": 14,
+                "price": 120000,
+            },
+            "offer_result": {"status": "ok"},
+        },
+    )
+    fo = OrderFilterResult(order=o, telegram_message_color=ColorsEnum.green)
+    msg = convert_filtered_to_telegram_msg("FL.ru", [fo])[0]
+    assert "Auto-offer: отклик отправлен" in msg
+    assert "offer_result" not in msg
+
+
 def test_convert_filtered_shows_final_response_reject_skipped():
     o = Order(
         id="3",

@@ -4,7 +4,7 @@
 
 **Суть:** после enrichment вызывается `evaluate_order` из `final_response/` — решение `should_respond`, черновик отклика, срок, цена, причина отказа. Отказы обрабатываются как у первой LLM.
 
-**Статус:** подключено к `process_fl`. Сборка отклика — [задача 3](task-03-final-response-assembly.md). Задача 4 (auto-offer) **ещё не реализована**.
+**Статус:** подключено к `process_fl`. Сборка отклика — [задача 3](task-03-final-response-assembly.md). Режимы — [задача 4](task-04-work-modes.md). §5–§7 — отдельно.
 
 ---
 
@@ -108,4 +108,4 @@ PYTHONPATH=. venv/Scripts/python.exe scripts/smoke_final_response.py
 
 ## Следующий шаг
 
-[Задача 3](task-03-final-response-assembly.md) — сборка финального текста (реализована). Далее — задача 4 (auto-offer).
+[Задача 3](task-03-final-response-assembly.md) — сборка финального текста (реализована). [Задача 4](task-04-work-modes.md) — режимы (реализована). Далее — §5 или §6.
