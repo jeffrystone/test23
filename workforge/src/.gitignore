@@ -1,0 +1,5 @@
+venv
+testrun.ipynb
+../.env
+.env
+__pycache__/

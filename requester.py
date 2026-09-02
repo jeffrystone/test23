@@ -21,6 +21,9 @@ DEFAULT_HEADERS = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
 }
 
+NO_PROXY = {"http": None, "https": None}
+HTTP = requests.Session()
+HTTP.trust_env = False
 DEFAULT_SESSION = Path(__file__).resolve().parent / ".simulate" / "session.json"
 AUTH_HINT = "нет сессии, запустите node auth.js"
 
@@ -56,4 +59,5 @@ def xsrf_headers(cookie_header):
 def request(url, method="GET", cookie=None, session=None, **kwargs):
     cookie = cookie or session_cookie(session)
     headers = {**DEFAULT_HEADERS, "Cookie": cookie, **kwargs.pop("headers", {})}
-    return requests.request(method.upper(), url, headers=headers, **kwargs)
+    kwargs.setdefault("proxies", NO_PROXY)
+    return HTTP.request(method.upper(), url, headers=headers, **kwargs)

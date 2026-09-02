@@ -34,6 +34,28 @@ def unique_path(directory, filename):
         index += 1
 
 
+def parse_order_id(url):
+    match = re.search(r"/projects/(\d+)/", url)
+    return match.group(1) if match else ""
+
+
+def parse_project_name(soup):
+    for selector in (
+        "h1.fl-project-content__title",
+        ".fl-project-content__title",
+        "h1",
+    ):
+        node = soup.select_one(selector)
+        if node:
+            text = node.get_text(strip=True)
+            if text:
+                return text
+    title = soup.find("title")
+    if title:
+        text = title.get_text(strip=True)
+        if text:
+            return text.split("|")[0].strip()
+    return "Заказ"
 TYPE_BY_LINK_TEXT = {
     "Посмотреть другие заказы": "project",
     "Посмотреть другие вакансии": "vacancy",
@@ -63,6 +85,7 @@ def parse_project(html, base_url):
     page_type = detect_type(soup)
     description = soup.select_one(".fl-project-content__description-text")
     summary = description.decode_contents() if description else ""
+    name = parse_project_name(soup)
 
     files = []
     seen = set()
@@ -73,7 +96,8 @@ def parse_project(html, base_url):
                 continue
             seen.add(url)
             files.append({"url": url, "name": filename_for(link)})
-    return page_type, summary, files
+
+    return page_type, name, summary, files
 
 
 def download_files(entries, output_dir, cookie):
@@ -103,13 +127,15 @@ def main():
     current_uid = soup.find("meta", {"name": "current-uid"})
     if current_uid and current_uid.get("content") == "0":
         raise RuntimeError("сессия мертвая, запустите node auth.js")
-    page_type, summary, parsed_files = parse_project(response.text, args.target)
+    page_type, name, summary, parsed_files = parse_project(response.text, args.target)
     files = download_files(parsed_files, Path(args.output_dir), cookie)
 
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
-        json.dumps({"type": page_type, "summary": summary, "files": files}, ensure_ascii=False, indent=2),
+        json.dumps({"type": page_type, "id": parse_order_id(args.target),
+                "url": args.target,
+                "name": name, "summary": summary, "files": files}, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
     print(f"status: {response.status_code}")

@@ -1,0 +1,134 @@
+I run a software engineering outsourcing company.
+I receive many parsed freelance orders, but most of them are irrelevant.
+
+Your job is to perform a second-level semantic filtering of projects that already passed a basic keyword filter.
+
+The goal is simple:
+leave only concrete software development projects that fit a custom software engineering outsourcing company.
+
+Input format
+
+Projects will always have this structure:
+
+id: str
+name: str
+description: str
+url: str
+meta: dict
+
+I will send them to you in the following format:
+{
+  "orders": [
+    {
+      'id': string,
+      'name': string,
+      'description': string,
+      'url': string,
+      'meta': {}
+    },
+    {
+      'id': string,
+      'name': string,
+      'description': string,
+      'url': string,
+      'meta': {}
+    }
+  ]
+}
+
+Your task is to decide whether this is a concrete software development project with a deliverable result suitable for an outsourcing team.
+
+Approve projects in these categories:
+1. Custom systems / platforms (backend, APIs, business logic).
+2. Mobile or desktop applications.
+3. Data processing / automation / integrations (APIs, parsing, sync, pipelines).
+4. System integration (integration of multiple systems with custom logic, APIs, data flows, automation).
+5. AI / LLM systems (assistants, agents, RAG, embeddings).
+6. Bots and mini apps with logic (Telegram bots, chat systems).
+7. Low-code / no-code projects (e.g. Replit, Cursor, Webflow, AI builders)
+ONLY if they involve building a system with custom logic, workflows, integrations, or automation.
+8. Software systems interacting with hardware (e.g. backend, AI, computer vision, control systems), as long as the main work is software
+9. System design, requirements, technical specification, system architecture for future software development.
+10. Testing and QA related to software development (e.g. test design, test strategy, validation of functionality as part of development).
+11. Website development, unless CMS usage is explicitly specified. Do not assume CMS usage if it is not mentioned.
+12. Support, maintenance, or ongoing work on a custom software system (e.g. backend service, API, platform).
+
+Here are the examples of some real projects that should be approved written in the format: project_name [project_description]:
+-- Создать трекер бота для отслеживания статусов посылок [Для упрощения и структурирования отправки товаров, требуется создать для телеграмма бота отслеживающий статус посылок.]
+-- Разработка мобильного приложения футбольной лиги [Разработка мобильного приложения (iOS, Android) футбольной лиги. Основные задачи: Этап 1: - парсинг информации с сайта; - регистрация пользователей с авторизацией через...]
+-- Настройка Claude Cowork [Автоматизация еженедельного сбора данных о новых тендерах с пяти крупнейших ЭТП (электронных торговых площадок) в единую таблицу Excel/CSV для последующего анализа. Прикреплено...]
+-- Парсер ссылки с poizon [## 1. Описание задачи  Мне нужен промежуточный backend-сервис (API) для моего Telegram-бота. В бот отправляют ссылку на товар с китайской платформы POIZON, а ваш сервис должен...]
+-- Chromium Embedded Framework [CEF) с использованием C++ (Требуется разработать простой десктопный браузер на базе Chromium Embedded Framework (CEF) с использованием C++. Приложение должно поддерживать базовый функционал: адресную...]
+-- Создание вебсайта через AI конструктор [Задача заключается в том, что мы вам предоставляем информацию о компании, текстовки, которые можно было бы использовать, другой сайт как референс по информации, а вы создаете...]
+-- создание графрага с векторной базой [создать графраг найти облако для извлечения и разметки данных]
+
+Reject projects in these categories: 
+1. Not software development (3D modelling, design work, architectural drawings, CAD tasks, etc.)
+2. Marketing / SEO / promotion 
+BUT: Software development for marketing tasks should be approved, unless the purpose is spam, fake engagement, or artificial manipulation of users or platforms.
+3. Account rental / publishing / placement
+4. Hiring / recruitment ONLY when the post clearly represents a job vacancy or staff hiring (e.g. long-term employment, joining a team, salary-based role, internship, trainee position, to the team, in a team). Senioiry level (junior, middle, senior) in the text usually (but not always) indicates the staff hiring. If there is any ambiguity and the post could represent a concrete development task or project, even if HR-style wording is used, treat it as a project and approve it.
+5. Hardware engineering, electronics design, or embedded firmware development (microcontrollers, PCB design, Arduino, ESP32, STM32, etc.).
+6. Configuration, setup, or implementation of ready-made business systems (e.g. 1C, SAP, Google Analytics, GTM, AmoCRM, Bitrix24, etc.).
+BUT: Development of custom modules, APIs, integrations, or external services involving these systems should be APPROVED.
+7. Development or customization of websites based on CMS platforms (e.g. WordPress, Bitrix, MODX, Joomla, Drupal, Tilda, etc.).
+8. Simple website tasks such as: landing pages, copying existing websites, cloning templates, minor frontend-only edits
+9. Configuration or scripting of consumer tools, office automation, macros, auto-clickers, or game automation (e.g. Excel VBA, Google Sheets scripts).
+10. Configuration or installation of ready-made software stacks
+11. Game server setup, game modding, plugins or scripting for existing games.
+12. Content generation using AI tools (texts, images, videos, product descriptions, reviews, etc.) without building a software system.
+13. Very small one-time technical tasks that do not involve software development and could be completed manually or in a few minutes (data import/export, device setup, copying data, file conversion, simple data entry, content updates, minor UI tweaks, simple edits, etc.)
+14. Small debugging or troubleshooting tasks for existing software (e.g. fixing bugs, optimizing single queries, minor fixes in scripts)
+15. Projects explicitly restricted to individual freelancers only (e.g. "studios/teams do not write", "designer-developer in one person").
+16. Projects restricted to a specific city/region requiring local presence (e.g. "only from Moscow", "only Kyiv residents").
+17. Academic, school or student assignments (e.g. diploma thesis, laboratory work, school work).
+18. Unrealistic / vague projects. A short but clear request is NOT considered vague.
+If a project contains clear technical indicators of software development do NOT reject it as vague even if the description is short or poorly written.
+
+Here are some real examples of irrelevant projects written in the format: project_name [project_description]:
+-- 3д модель человека [нужно сделать или взять уже имеющуюся 3д модель человека и нанести на нее корректные линии обхвата, например обвести туловище линией и стрелочками и тп. ЧТобы это в дальнейшем...]
+-- Подключение к существующему аккаунту Google play Developer [Ищу специалиста с действующим аккаунтом Google Play Developer, зарегистрированным до 2023 года, для сотрудничества по размещению приложений.  Интересует долгосрочная работа.  В...]
+-- Однолинейные схемы [Даны принципиальные схемы. Необходимо выполнить однолинейные схемы.  Предварительно, проверить правильность принципиальных схем, применяемых автоматов, коэффициентов, расчет...]
+-- Неоходимо сверстать макет фигма ТК Вид [Добрый день! Неоходимо сверстать дизайн макет фигма. Дизайн:...]
+-- СЕО аудит сайта [Нужен качественный СЕО аудит нашего сайта составить тз для программиста]
+-- Создать самописную отраслевую платформу сферы Автоуслуг [ВНИМАНИЕ ВАЖНО ! - Ищем сотрудников IT – индустрии / программистов, работающих ИСКЛЮЧИТЕЛЬНО из Санкт-Петербурга  Необходимо создать сайт / эко-систему / отраслевую платформу...]
+-- Верстальщик с навыками работы с React JSX [Ищу Верстальщика с навыками работы с React JSX, Tailwind CSS, DaisyUI, умением запустить Vite-проект и писать адаптивную верстку Глубокие знания React не требуются, просто...]
+-- Импорт контактов в iPhone из электронного документа. [Здравствуйте! Нужно из электронного документа импортировать контакты в iPhone телефонную книгу 1000 контактов +]
+-- Сделать несложный модуль AR на Unity (Перекупам/студиям/командам не писать) [Нужно сделать модуль AR на Unity, который будем интегрировать с Flutter Параметром мы передаем URL модели, ее координаты. Нужно либо ее отображать, либо стрелку-направление к...]
+-- Создание игры (сервера) в s&box [Нужно создать из идеи продукт сервер в игре s&box]
+-- Найти баш в базе данных mysql сайта, создающий множество запросов внутри неё
+-- Доработка макроса VBA [Здравствуйте! Тех задание и файл в прикрепленном файле сроки и бюджет обговаривается]
+-- Найти баш в базе данных mysql сайта, создающий множество запросов внутри неё [Тормозится работа сайта, хостер выявил много запросов с самого севера. Нужна оптимизации запросов внутри БД]
+-- Ищу разработчика продающего лендинга [Ищу разработчика лендинга для продажи цифровых продуктов (курсы, книга, подписка) Нужно сделать продающий , современный лендинг подключить онлайн-оплату формы заявок мобильную...]
+-- создать проект для дипломной с интеграцией API яндекс диска в приложении андроид студио [Вывод на экран списка файлов с яндекс диска с возможностью просмотра и скачивания]
+-- Установка стека whisper + deepseek на сервере со стандартным WEBUI для авторизации и загрузки файлов [Возьму стажера/новичка. Нужно установить и настроить на арендованном сервере систему для автоматической транскрибации и анализа звонков менеджеров, используя технологии Whisper...]
+-- Нужен QA для ручного тестирования функционала CRM и улучшения "пользовательского опыта" [О продукте — CRMДом, веб-админка, виджет, мобильное приложение. Обязанности — качество UI (вёрстка, адаптив, доступность), проверка сценариев по ролям, предложения по UX,...]
+-- Создание ИИ-обзоров (нейрообзоров) для товаров B2B интернет-магазина [1. О проекте Мы — крупный интернет-магазин (в каталоге более 40 000 товаров). Основной ассортимент: металлическая мебель (шкафы, стеллажи, верстаки, сейфы), строительное и...]
+-- ИЩЕМ MIDDLE-РАЗРАБОТЧИКА ДЛЯ ИИ-АССИСТЕНТА (Make.com + API) [О проекте: Создаем корпоративного ИИ-ассистента для компании по производству кофе. Нужно собрать данные из 10+ источников (Plaud, Zoom, Яндекс Телемост, Google Meet,...]
+-- Создание веб-сайт [- Создание эффективного одностраничного сайта для турагентства, который будет служить инструментом для информирования клиентов об актуальных предложениях и обновлениях. -...]
+-- Копия 6 одностраничных сайтов с небольшой доработкой [Здравствуйте, требуется сделать копии 6 сайтов с доработкой  Нужна копия сайта + всех файлов (стили, изображения).  Для каждого сайта нужно поменять 1. Названия стилей CSS 2....]
+-- Разработка бетта-лэндинга для тестирования гипотезы по выводу на рынок нового носимого устройства [Задача Требуется дизайн и разработка сайта для нового технологичного устройства  Ищем дизайнера-разработчика (в одном лице) для создания сайта нового технологичного продукта....]
+-- Настроить Google Analitics через Google Tag Manager [Нужно разобраться и починить передачу данных о продажах в Google Analitics через GTM. CMS не поддерживает интеграцию с GA, надо прописать руками.  3 сайта.]
+-- Фронтенд разработчик  react/react native [Нужен разработчик реакт от high midle и выше в команду для доработки вэб приложения и в дальнейшем переноса в react native.]
+-- Сделать чат-бот для помощи в изучении языков в вк [Мне дали тему диплома: Интеграция чат-бота для помощи в изучении языков с адаптивным подбором уроков, я выбрал площадку вконтаке]
+-- Обработка для выгрузки данных из 1С УТ10.3 в Excel [Нужно написать обработку для выгрузки из 1С УТ10.3 в Excel в формате .xlsx, всех карточек товара, столбики которые должны выгружаться - Свойство товара - Наименование товара -...]
+
+Return ONLY valid JSON object with this exact schema:
+{
+  "items": [
+    {
+      "id": "string",
+      "approved": true/false,
+      "reason": "string"
+    }
+  ]
+}
+
+Rules for output:
+- Include one item for each input order id.
+- Preserve ids exactly as in input.
+- approved=true for approved orders, otherwise approved=false.
+- reason must describe type of the project, and a reason for rejection or approval.
+- reason must be a short (15 words max) note in Russian.
+- reason must not repeat or summarize the project name or description.
+- Do not return `orders`, markdown, comments, or any extra fields/text.
